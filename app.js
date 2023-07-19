@@ -21,7 +21,6 @@ const initializeDbAndServer = async () => {
     console.log(`DB Error : ${e.message}`);
   }
 };
-
 initializeDbAndServer();
 
 module.exports = app;
@@ -42,7 +41,6 @@ const authenticateToken = (request, response, next) => {
         response.send("Invalid JWT Token");
       } else {
         request.username = payload;
-        console.log(payload);
         next();
       }
     });
@@ -110,17 +108,64 @@ app.post("/login", async (request, response) => {
 
 app.get("/user/tweets/feed/", authenticateToken, async (request, response) => {
   const { username } = request;
+  const dbUser = `SELECT * FROM user WHERE username = '${username}'`;
+  const dbUserResponse = await db.get(dbUser);
   const getTweets = `
-  SELECT username,tweet,date_time as dateTime
-  FROM user inner join tweet ON 
-       user.user_id = tweet.user_id
+  SELECT user.username, tweet.tweet, tweet.date_time as dateTime
+  FROM 
+    follower INNER JOIN tweet ON
+    follower.following_user_id = tweet.user_id
+    INNER JOIN user ON
+    tweet.user_id = user.user_id
   WHERE 
-    user.username = '${username}'
-  GROUP BY
-    date_time
+    follower.follower_user_id = ${dbUserResponse.user_id}
   ORDER BY
-    date_time DESC
+    tweet.date_time DESC
   LIMIT 4`;
   const dbResponse = await db.all(getTweets);
   response.send(dbResponse);
+});
+
+// GET                      API - 4
+
+app.get("/user/following/", authenticateToken, async (request, response) => {
+  const { username } = request;
+  const dbUser = `SELECT * FROM user WHERE username = '${username}'`;
+  const dbUserResponse = await db.get(dbUser);
+  const userFollowingUsernames = `
+  SELECT *
+  FROM follower left join user ON
+    follower.follower_user_id = user.user_id
+   
+  WHERE 
+    user.user_id = ${dbUserResponse.user_id}
+  `;
+  const dbResponse = await db.all(userFollowingUsernames);
+  console.log(dbResponse);
+  response.send(dbResponse);
+});
+
+// GET                      API - 5
+
+app.get("/user/followers/", authenticateToken, async (request, response) => {
+  const { username } = request;
+  const dbUser = `SELECT * FROM user WHERE username = '${username}'`;
+  const dbUserResponse = await db.get(dbUser);
+  const userFollowingUsernames = `
+  SELECT *
+  FROM follower left join user ON
+    follower.follower_user_id = user.user_id
+   
+  WHERE 
+    user.user_id = ${dbUserResponse.user_id}
+  `;
+  const dbResponse = await db.all(userFollowingUsernames);
+  console.log(dbResponse);
+  response.send(dbResponse);
+});
+
+// GET                      API - 6
+
+app.get("/tweets/:tweetId", authenticateToken, async (request, response) => {
+  const { tweetId } = request.params;
 });

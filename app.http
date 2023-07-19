@@ -24,3 +24,8 @@ Content-Type: application/json
 
 GET http://localhost:3000/user/tweets/feed/
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.Sm9lQmlkZW4.30TY6nf03fdWpnBvldbHlAyhu2Ycb8eRY6HgeBEcjpg
+
+###                 API - 3
+
+GET http://localhost:3000/user/following/
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.Sm9lQmlkZW4.30TY6nf03fdWpnBvldbHlAyhu2Ycb8eRY6HgeBEcjpg
