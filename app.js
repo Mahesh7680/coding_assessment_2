@@ -198,3 +198,117 @@ app.get("/tweets/:tweetId", authenticateToken, async (request, response) => {
     response.send("Invalid Request");
   }
 });
+
+//GET LIKES OF tweetId          API - 7
+
+app.get(
+  "/tweets/:tweetId/likes/",
+  authenticateToken,
+  async (request, response) => {
+    const { tweetId } = request.params;
+    const { username, user_id } = request;
+    const userFollowingUsernames = `SELECT name
+  FROM follower left join user ON
+    follower.following_user_id = user.user_id
+  WHERE 
+    follower.follower_user_id = ${user_id}`;
+    let dbResponseNames = await db.all(userFollowingUsernames);
+    dbResponseNames = dbResponseNames.map((each) => each.name);
+    console.log(dbResponseNames);
+    const getTwittedDetails = `
+                  SELECT name
+                  FROM tweet inner join user ON
+                    tweet.user_id = user.user_id
+                  WHERE 
+                    tweet.tweet_id = ${tweetId}`;
+    const dbResponse = await db.get(getTwittedDetails);
+    if (dbResponseNames.includes(dbResponse.name) === false) {
+      response.status(401);
+      response.send("Invalid Request");
+    }
+  }
+);
+
+//GET REPLIES OF tweetId          API - 8
+
+app.get(
+  "/tweets/:tweetId/replies/",
+  authenticateToken,
+  async (request, response) => {
+    const { tweetId } = request.params;
+    const { username, user_id } = request;
+    const userFollowingUsernames = `SELECT name
+  FROM follower left join user ON
+    follower.following_user_id = user.user_id
+  WHERE 
+    follower.follower_user_id = ${user_id}`;
+    let dbResponseNames = await db.all(userFollowingUsernames);
+    dbResponseNames = dbResponseNames.map((each) => each.name);
+    console.log(dbResponseNames);
+    const getTwittedDetails = `
+                  SELECT name
+                  FROM tweet inner join user ON
+                    tweet.user_id = user.user_id
+                  WHERE 
+                    tweet.tweet_id = ${tweetId}`;
+    const dbResponse = await db.get(getTwittedDetails);
+    if (dbResponseNames.includes(dbResponse.name) === false) {
+      response.status(401);
+      response.send("Invalid Request");
+    }
+  }
+);
+
+//GET ALL TWEETS          API - 9
+
+app.get("/user/tweets/", authenticateToken, async (request, response) => {
+  const { username, user_id } = request;
+  const userFollowingUsernames = `SELECT name
+  FROM follower left join user ON
+    follower.following_user_id = user.user_id
+  WHERE 
+    follower.follower_user_id = ${user_id}`;
+  let dbResponseNames = await db.all(userFollowingUsernames);
+});
+
+//POST create new tweet             API - 10
+
+app.post("/user/tweets/", authenticateToken, async (request, response) => {
+  const { tweet } = request.body;
+  const createNewTweet = `
+        INSERT INTO tweet(tweet)
+        VALUES(
+            '${tweet}'
+        )`;
+  const dbResponse = await db.run(createNewTweet);
+  response.send("Created a Tweet");
+});
+
+//GET LIKES OF tweetId          API - 11
+
+app.delete(
+  "/tweets/:tweetId/",
+  authenticateToken,
+  async (request, response) => {
+    const { tweetId } = request.params;
+    const { username, user_id } = request;
+    const getTwittedDetails = `
+                  SELECT tweet.tweet_id as id
+                  FROM tweet inner join user ON
+                    tweet.user_id = user.user_id
+                WHERE
+                  user.username = '${username}'`;
+    const dbResponse = await db.all(getTwittedDetails);
+    const responseArray = dbResponse.map((each) => each.id);
+    if (responseArray.includes(parseInt(tweetId)) === false) {
+      response.status(401);
+      response.send("Invalid Request");
+    } else {
+      const deleteTweet = `
+        DELETE FROM tweet
+        WHERE tweet_id = ${tweetId}`;
+      await db.run(deleteTweet);
+      response.send("Tweet Removed");
+    }
+  }
+);

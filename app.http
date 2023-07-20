@@ -39,3 +39,22 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.Sm9lQmlkZW4.30TY6nf03fdWpnBvldbHlAyhu
 
 GET http://localhost:3000/tweets/2/
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.Sm9lQmlkZW4.30TY6nf03fdWpnBvldbHlAyhu2Ycb8eRY6HgeBEcjpg
+
+###                 API - 7
+
+GET http://localhost:3000/tweets/2/likes/
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.Sm9lQmlkZW4.30TY6nf03fdWpnBvldbHlAyhu2Ycb8eRY6HgeBEcjpg
+
+###                 API - 10
+
+POST  http://localhost:3000/user/tweets/
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.Sm9lQmlkZW4.30TY6nf03fdWpnBvldbHlAyhu2Ycb8eRY6HgeBEcjpg
+
+{
+   "tweet": "The Mornings..."
+}
+
+###
+
+DELETE http://localhost:3000/tweets/1/
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.Sm9lQmlkZW4.30TY6nf03fdWpnBvldbHlAyhu2Ycb8eRY6HgeBEcjpg
