@@ -163,36 +163,48 @@ app.get("/user/followers/", authenticateToken, async (request, response) => {
 app.get("/tweets/:tweetId", authenticateToken, async (request, response) => {
   const { tweetId } = request.params;
   const { username, user_id } = request;
-  const userFollowingUsernames = `SELECT name
-  FROM follower left join user ON
+  const tweetsQuery = `
+                SELECT *
+                FROM tweet
+                WHERE 
+                  tweet.tweet_id = ${tweetId}`;
+  const tweetResults = await db.get(tweetsQuery);
+
+  const userFollowersQuery = `
+  SELECT *
+  FROM follower INNER JOIN user ON
     follower.following_user_id = user.user_id
   WHERE 
     follower.follower_user_id = ${user_id}`;
-  let dbResponseNames = await db.all(userFollowingUsernames);
-  dbResponseNames = dbResponseNames.map((each) => each.name);
-  console.log(dbResponseNames);
-  const getTwittedDetails = `
-                  SELECT name
-                  FROM tweet inner join user ON
-                    tweet.user_id = user.user_id
-                  WHERE 
-                    tweet.tweet_id = ${tweetId}`;
-  const dbResponse = await db.get(getTwittedDetails);
-  if (dbResponseNames.includes(dbResponse.name) === true) {
-    const getTweetByTweetId = `
-      SELECT tweet.tweet as tweet, 
-            COUNT(like.like_id) as likes,
-            COUNT(reply.reply_id) as replies,
-            tweet.date_time as dateTime
-      FROM tweet inner join like ON
-        tweet.user_id = like.user_id left join 
-        reply ON tweet.tweet_id = reply.tweet_id
-      WHERE
-        tweet.tweet_id = ${tweetId}
-      `;
-    const tweetResponse = await db.get(getTweetByTweetId);
-    console.log(tweetResponse);
-    response.send(tweetResponse);
+  let userFollowers = await db.all(userFollowersQuery);
+
+  if (
+    userFollowers.some(
+      (item) => item.following_user_id === tweetResults.user_id
+    )
+  ) {
+    const { tweet_id, date_time, tweet } = tweetResults;
+
+    const getLikesQuery = `
+    SELECT COUNT(like_id) as likes
+    FROM like
+    WHERE tweet_id = ${tweet_id} 
+    GROUP BY tweet_id`;
+    const likesObject = await db.get(getLikesQuery);
+
+    const getRepliesQuery = `
+    SELECT COUNT(reply_id) as replies
+    FROM reply
+    WHERE tweet_id = ${tweetId}
+    GROUP BY tweet_id`;
+    const repliesObject = await db.get(getRepliesQuery);
+
+    response.send({
+      tweet,
+      likes: likesObject.likes,
+      replies: repliesObject.replies,
+      dateTime: date_time,
+    });
   } else {
     response.status(401);
     response.send("Invalid Request");
@@ -225,6 +237,18 @@ app.get(
     if (dbResponseNames.includes(dbResponse.name) === false) {
       response.status(401);
       response.send("Invalid Request");
+    } else {
+      const getLikesQuery = `SELECT user.name
+                  FROM like inner join user ON 
+                  like.user_id = user.user_id
+                  WHERE 
+                    like.tweet_id = ${tweetId}`;
+      const likesObject = await db.all(getLikesQuery);
+      let namesArray = likesObject.map((each) => each.name);
+      console.log(namesArray);
+      response.send({
+        likes: namesArray,
+      });
     }
   }
 );
@@ -263,12 +287,34 @@ app.get(
 
 app.get("/user/tweets/", authenticateToken, async (request, response) => {
   const { username, user_id } = request;
-  const userFollowingUsernames = `SELECT name
-  FROM follower left join user ON
-    follower.following_user_id = user.user_id
-  WHERE 
-    follower.follower_user_id = ${user_id}`;
-  let dbResponseNames = await db.all(userFollowingUsernames);
+
+  const tweetsQuery = `
+                SELECT *
+                FROM tweet
+                WHERE 
+                  tweet.user_id = '${user_id}'`;
+  const tweetResults = await db.get(tweetsQuery);
+  const { tweet, date_time } = tweetResults;
+
+  const getLikesQuery = `
+    SELECT COUNT(like_id) as likes
+    FROM like
+    WHERE like.user_id = '${user_id}'`;
+  const likesObject = await db.get(getLikesQuery);
+
+  const getRepliesQuery = `
+    SELECT COUNT(reply_id) as replies
+    FROM reply
+    WHERE reply.user_id = '${user_id}'
+    GROUP BY tweet_id`;
+  const repliesObject = await db.get(getRepliesQuery);
+
+  response.send({
+    tweet,
+    likes: likesObject.likes,
+    replies: repliesObject.replies,
+    dateTime: date_time,
+  });
 });
 
 //POST create new tweet             API - 10
@@ -284,7 +330,7 @@ app.post("/user/tweets/", authenticateToken, async (request, response) => {
   response.send("Created a Tweet");
 });
 
-//GET LIKES OF tweetId          API - 11
+//DELETE TWEET by tweetId          API - 11
 
 app.delete(
   "/tweets/:tweetId/",
